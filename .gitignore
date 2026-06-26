@@ -12,6 +12,7 @@ Makefile
 Makefile.Debug
 Makefile.Release
 object_script.*
+*_resource.rc
 
 # Directories
 debug/

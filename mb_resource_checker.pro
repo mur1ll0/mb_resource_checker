@@ -33,3 +33,6 @@ LIBS += -lsetupapi -lole32 -loleaut32 -lwbemuuid
 # Directives to compile as a standard executable
 # We will package dependencies dynamically using windeployqt
 
+# Set the application icon
+RC_ICONS = resources/app_icon.ico
+

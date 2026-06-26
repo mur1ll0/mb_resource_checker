@@ -115,7 +115,7 @@ void MotherboardMap::setupUI() {
 
     mainLayout->addLayout(bodyLayout);
     
-    setWindowTitle("Hardware Motherboard Map Overlay");
+    setWindowTitle("Hardware Motherboard Map Overlay - v1.0.0");
     resize(1250, 700);
 }
 
