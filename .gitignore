@@ -1,0 +1,23 @@
+# Visual Studio / MSVC build outputs
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.res
+*.exe
+
+# Qt / QMake outputs
+.qmake.stash
+Makefile
+Makefile.Debug
+Makefile.Release
+object_script.*
+
+# Directories
+debug/
+release/
+
+# Temporary / Package outputs
+mb_resource_checker.zip
+*.log
+scratch/
