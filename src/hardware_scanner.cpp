@@ -467,6 +467,27 @@ std::vector<SlotInfo> HardwareScanner::scanPCIeViaSetupAPI() {
                 tSlot.slotType = s->SlotType;
                 tSlot.occupied = (s->CurrentUsage == 0x04);
                 tSlot.hasBusInfo = false;
+                tSlot.matched = false;
+                tSlot.deviceName = "Empty Slot";
+                tSlot.details = "";
+
+                // Deduce type from designation name or slot type
+                std::string nameLower = tSlot.designation;
+                std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+                if (nameLower.find("m.2") != std::string::npos || nameLower.find("m2") != std::string::npos) {
+                    tSlot.deducedType = SLOT_M2;
+                } else if (nameLower.find("pci") != std::string::npos) {
+                    tSlot.deducedType = SLOT_PCIE;
+                } else {
+                    // Fallback using s->SlotType
+                    if (s->SlotType >= 0xA5 && s->SlotType <= 0xAE) {
+                        tSlot.deducedType = SLOT_PCIE;
+                    } else if (s->SlotType == 0x0C || s->SlotType == 0x1B || s->SlotType == 0x1C || s->SlotType == 0x1D) {
+                        tSlot.deducedType = SLOT_M2;
+                    } else {
+                        tSlot.deducedType = SLOT_PCIE; // default fallback
+                    }
+                }
 
                 // Segment, Bus, Dev/Func are defined in SMBIOS 2.6+
                 if (header->Length >= 17) {
@@ -576,7 +597,8 @@ std::vector<SlotInfo> HardwareScanner::scanPCIeViaSetupAPI() {
                 if (smbiosSlots[i].hasBusInfo && smbiosSlots[i].busNum == (BYTE)busNumber && smbiosSlots[i].devFunc == devFuncByte) {
                     smbiosSlots[i].occupied = true;
                     smbiosSlots[i].deviceName = deviceName;
-                    smbiosSlots[i].deducedType = deducedType;
+                    // Keep the physical slot type of the motherboard (e.g. PCIe) rather than overriding it with the device type (e.g. M.2 Wi-Fi)
+                    // smbiosSlots[i].deducedType = deducedType;
                     smbiosSlots[i].matched = true;
                     
                     std::stringstream detailsSS;
@@ -704,8 +726,8 @@ std::vector<SlotInfo> HardwareScanner::scanStorageViaWMI() {
         }
     }
 
-    // Add remaining unoccupied SATA ports (assume a standard motherboard with 4 SATA ports)
-    int maxSataPorts = 4;
+    // Add remaining unoccupied SATA ports (default to at least 6 SATA ports)
+    int maxSataPorts = (sataOccupiedCount > 6) ? sataOccupiedCount : 6;
     if (sataOccupiedCount < maxSataPorts) {
         for (int i = sataOccupiedCount + 1; i <= maxSataPorts; ++i) {
             SlotInfo slot;

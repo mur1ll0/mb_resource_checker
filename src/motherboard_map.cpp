@@ -7,6 +7,10 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QMessageBox>
+#include <QMenu>
+#include <QAction>
+#include <QClipboard>
+#include <QApplication>
 
 MotherboardMap::MotherboardMap(QWidget* parent)
     : QWidget(parent), m_view(NULL), m_scene(NULL), m_sidebarTree(NULL), m_mbInfoLabel(NULL), m_refreshButton(NULL) {
@@ -38,6 +42,14 @@ void MotherboardMap::setupUI() {
         "}"
         "QTreeWidget::item:hover {"
         "  background-color: #243343;"
+        "}"
+        "QTreeWidget::item:selected {"
+        "  background-color: #00bc8c;"
+        "  color: #ffffff;"
+        "}"
+        "QTreeWidget::item:selected:!active {"
+        "  background-color: #1a4d3e;"
+        "  color: #ffffff;"
         "}"
         "QHeaderView::section {"
         "  background-color: #202d3a;"
@@ -111,6 +123,14 @@ void MotherboardMap::setupUI() {
     m_sidebarTree->header()->setResizeMode(1, QHeaderView::ResizeToContents);
     m_sidebarTree->header()->setResizeMode(2, QHeaderView::Stretch);
 #endif
+    m_sidebarTree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_sidebarTree, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
+
+    QAction* copyAction = new QAction(this);
+    copyAction->setShortcut(QKeySequence::Copy);
+    connect(copyAction, SIGNAL(triggered()), this, SLOT(copySelectedRow()));
+    m_sidebarTree->addAction(copyAction);
+
     bodyLayout->addWidget(m_sidebarTree);
 
     mainLayout->addLayout(bodyLayout);
@@ -310,5 +330,37 @@ void MotherboardMap::updateVisuals(const std::vector<SlotInfo>& slotList) {
         // Add to graphics scene
         SlotItem* visualSlot = new SlotItem(info, rect);
         m_scene->addItem(visualSlot);
+    }
+}
+
+void MotherboardMap::copySelectedRow() {
+    QTreeWidgetItem* item = m_sidebarTree->currentItem();
+    if (!item) return;
+    
+    QClipboard* clipboard = QApplication::clipboard();
+    QString text = item->text(0) + "\t" + item->text(1) + "\t" + item->text(2);
+    clipboard->setText(text);
+}
+
+void MotherboardMap::showContextMenu(const QPoint& pos) {
+    QTreeWidgetItem* item = m_sidebarTree->itemAt(pos);
+    if (!item) return;
+
+    QMenu menu(this);
+    QAction* copyLoc = menu.addAction("Copy Location");
+    QAction* copyDev = menu.addAction("Copy Device Installed");
+    QAction* copyRow = menu.addAction("Copy Row Info");
+
+    QAction* selectedAction = menu.exec(m_sidebarTree->mapToGlobal(pos));
+    if (!selectedAction) return;
+
+    QClipboard* clipboard = QApplication::clipboard();
+    if (selectedAction == copyLoc) {
+        clipboard->setText(item->text(0));
+    } else if (selectedAction == copyDev) {
+        clipboard->setText(item->text(2));
+    } else if (selectedAction == copyRow) {
+        QString text = item->text(0) + "\t" + item->text(1) + "\t" + item->text(2);
+        clipboard->setText(text);
     }
 }

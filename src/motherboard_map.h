@@ -20,6 +20,8 @@ public:
 
 private Q_SLOTS:
     void runHardwareScan();
+    void copySelectedRow();
+    void showContextMenu(const QPoint& pos);
 
 private:
     void setupUI();
