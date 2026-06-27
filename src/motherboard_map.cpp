@@ -83,6 +83,7 @@ void MotherboardMap::setupUI() {
     QHBoxLayout* headerLayout = new QHBoxLayout();
     m_mbInfoLabel = new QLabel("Scanning Motherboard...", this);
     m_mbInfoLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #00bc8c;");
+    m_mbInfoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     
     m_refreshButton = new QPushButton("Refresh Scan", this);
     connect(m_refreshButton, SIGNAL(clicked()), this, SLOT(runHardwareScan()));
@@ -337,9 +338,11 @@ void MotherboardMap::copySelectedRow() {
     QTreeWidgetItem* item = m_sidebarTree->currentItem();
     if (!item) return;
     
+    int col = m_sidebarTree->currentColumn();
+    if (col < 0) col = 0;
+    
     QClipboard* clipboard = QApplication::clipboard();
-    QString text = item->text(0) + "\t" + item->text(1) + "\t" + item->text(2);
-    clipboard->setText(text);
+    clipboard->setText(item->text(col));
 }
 
 void MotherboardMap::showContextMenu(const QPoint& pos) {

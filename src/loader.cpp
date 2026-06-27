@@ -35,6 +35,17 @@ std::string GetDirectoryOfFile(const std::string& filePath) {
     return filePath.substr(0, lastSlash);
 }
 
+// Helper to get modification time of a file
+FILETIME GetLastWriteTime(const std::string& path) {
+    FILETIME ft = { 0, 0 };
+    HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        GetFileTime(hFile, NULL, NULL, &ft);
+        CloseHandle(hFile);
+    }
+    return ft;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     (void)hInstance;
     (void)hPrevInstance;
@@ -71,8 +82,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::string outDir = std::string(tempPath) + "Motherboard_Resource_Checker_App";
     std::string mainExePath = outDir + "\\mb_resource_checker.exe";
 
-    // 3. Optimize startup: check if main executable is already extracted and present
-    if (!FileExists(mainExePath)) {
+    // 3. Optimize startup: check if main executable is already extracted and present and is up to date
+    bool needExtraction = true;
+    if (FileExists(mainExePath)) {
+        char loaderPath[MAX_PATH];
+        if (GetModuleFileNameA(NULL, loaderPath, MAX_PATH)) {
+            FILETIME ftLoader = GetLastWriteTime(loaderPath);
+            FILETIME ftExtracted = GetLastWriteTime(mainExePath);
+            
+            ULARGE_INTEGER uLoader, uExtracted;
+            uLoader.LowPart = ftLoader.dwLowDateTime;
+            uLoader.HighPart = ftLoader.dwHighDateTime;
+            uExtracted.LowPart = ftExtracted.dwLowDateTime;
+            uExtracted.HighPart = ftExtracted.dwHighDateTime;
+            
+            if (uExtracted.QuadPart >= uLoader.QuadPart) {
+                needExtraction = false; // Extracted files are up to date
+            }
+        }
+    }
+
+    if (needExtraction) {
         // Create destination directory
         CreateDirectoryRecursive(outDir);
 

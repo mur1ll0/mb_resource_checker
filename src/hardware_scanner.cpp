@@ -679,6 +679,18 @@ std::vector<SlotInfo> HardwareScanner::scanPCIeViaSetupAPI() {
 
 std::vector<SlotInfo> HardwareScanner::scanStorageViaWMI() {
     std::vector<SlotInfo> slots;
+
+    // Check if the system is a mobile system (laptop/notebook)
+    bool isMobile = false;
+    std::vector<std::wstring> csProps;
+    csProps.push_back(L"PCSystemType");
+    std::vector<std::vector<std::wstring> > csResults;
+    if (queryWMI(L"SELECT PCSystemType FROM Win32_ComputerSystem", csProps, csResults) && !csResults.empty()) {
+        int sysType = _wtoi(csResults[0][0].c_str());
+        if (sysType == 2) { // 2 = Mobile (Laptop/Notebook)
+            isMobile = true;
+        }
+    }
     
     // Query WMI Disk Drives to enrich SATA and M.2 storage visualization
     std::vector<std::wstring> props;
@@ -726,8 +738,9 @@ std::vector<SlotInfo> HardwareScanner::scanStorageViaWMI() {
         }
     }
 
-    // Add remaining unoccupied SATA ports (default to at least 6 SATA ports)
-    int maxSataPorts = (sataOccupiedCount > 6) ? sataOccupiedCount : 6;
+    // Add remaining unoccupied SATA ports (default to 1 for laptops, 6 for desktops)
+    int defaultMax = isMobile ? 1 : 6;
+    int maxSataPorts = (sataOccupiedCount > defaultMax) ? sataOccupiedCount : defaultMax;
     if (sataOccupiedCount < maxSataPorts) {
         for (int i = sataOccupiedCount + 1; i <= maxSataPorts; ++i) {
             SlotInfo slot;
