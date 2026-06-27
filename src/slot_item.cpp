@@ -90,16 +90,36 @@ void SlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
         painter->drawRoundedRect(m_rect, 4.0, 4.0);
     }
 
-    // Label render inside the overlays (if size is large enough)
-    if (m_rect.width() > 30 && m_rect.height() > 12) {
+    // Label render inside the overlays
+    bool drawNormal = true;
+    if (m_info.type == SLOT_RAM) {
+        drawNormal = false;
+        painter->setPen(Qt::white);
+        QFont font = painter->font();
+        font.setPointSize(m_isHovered ? 8 : 7);
+        font.setBold(true);
+        painter->setFont(font);
+
+        QString label = QString::fromLocal8Bit(m_info.name.c_str());
+        painter->save();
+        painter->translate(m_rect.center());
+        painter->rotate(90);
+        QRectF textRect(-m_rect.height() / 2, -m_rect.width() / 2, m_rect.height(), m_rect.width());
+        painter->drawText(textRect, Qt::AlignCenter, label);
+        painter->restore();
+    }
+    
+    if (drawNormal && m_rect.width() >= 30 && m_rect.height() >= 10) {
         painter->setPen(Qt::white);
         QFont font = painter->font();
         font.setPointSize(m_isHovered ? 8 : 7);
         font.setBold(true);
         painter->setFont(font);
         
-        // Show designator inside slot overlay
         QString label = QString::fromLocal8Bit(m_info.name.c_str());
+        if (m_info.type == SLOT_SATA) {
+            label = "SATA";
+        }
         painter->drawText(m_rect, Qt::AlignCenter, label);
     }
 }

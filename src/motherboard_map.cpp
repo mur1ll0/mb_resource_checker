@@ -83,7 +83,8 @@ void MotherboardMap::setupUI() {
     QHBoxLayout* headerLayout = new QHBoxLayout();
     m_mbInfoLabel = new QLabel("Scanning Motherboard...", this);
     m_mbInfoLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #00bc8c;");
-    m_mbInfoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_mbInfoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    m_mbInfoLabel->setFocusPolicy(Qt::ClickFocus);
     
     m_refreshButton = new QPushButton("Refresh Scan", this);
     connect(m_refreshButton, SIGNAL(clicked()), this, SLOT(runHardwareScan()));
@@ -127,8 +128,9 @@ void MotherboardMap::setupUI() {
     m_sidebarTree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_sidebarTree, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
 
-    QAction* copyAction = new QAction(this);
+    QAction* copyAction = new QAction(m_sidebarTree);
     copyAction->setShortcut(QKeySequence::Copy);
+    copyAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(copyAction, SIGNAL(triggered()), this, SLOT(copySelectedRow()));
     m_sidebarTree->addAction(copyAction);
 
@@ -290,7 +292,7 @@ void MotherboardMap::updateVisuals(const std::vector<SlotInfo>& slotList) {
         }
         else if (info.type == SLOT_PCIE) {
             // PCIe slots: horizontal slots below the CPU (X=80, Y=310+)
-            double height = (info.name.find("x16") != std::string::npos || info.name.find("X16") != std::string::npos || pcieCount == 0) ? 14 : 10;
+            double height = (info.name.find("x16") != std::string::npos || info.name.find("X16") != std::string::npos || pcieCount == 0) ? 14 : 12;
             double width = (height == 14) ? 320 : 150;
             
             rect = QRectF(80, 310 + pcieCount * 55, width, height);
@@ -316,8 +318,8 @@ void MotherboardMap::updateVisuals(const std::vector<SlotInfo>& slotList) {
             else item->setTextColor(1, QColor(40, 167, 69));
         }
         else if (info.type == SLOT_SATA) {
-            // SATA ports: small squares on bottom right (X=580+, Y=440+)
-            rect = QRectF(580 + (sataCount % 2) * 32, 440 + (sataCount / 2) * 26, 22, 16);
+            // SATA ports: slightly larger rectangles to fit "SATA" label (X=540+, Y=440+)
+            rect = QRectF(540 + (sataCount % 2) * 48, 440 + (sataCount / 2) * 26, 38, 16);
             sataCount++;
 
             QTreeWidgetItem* item = new QTreeWidgetItem(sataGroup);
